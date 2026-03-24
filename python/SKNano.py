@@ -4,14 +4,19 @@
 import os, shutil
 import warnings
 import argparse
-import htcondor
 import datetime
 import json
 import re
 import sys
 from pathlib import Path
 
-from htcondor import dags
+try:
+    import htcondor
+    from htcondor import dags
+except ImportError:
+    import htcondor2 as htcondor
+    from htcondor2 import dags
+
 from tqdm.rich import tqdm
 from tqdm import TqdmExperimentalWarning
 

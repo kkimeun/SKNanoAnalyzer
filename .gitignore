@@ -26,3 +26,11 @@ DataCOPY/**
 MCCOPY/**
 .vscode/**
 .cursor/**
+
+#build leftovers
+CMakeFiles/
+
+#temp/backup
+*.bak
+*.old
+backup_*
