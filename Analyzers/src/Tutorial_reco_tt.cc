@@ -112,7 +112,7 @@ void Tutorial_reco_tt::executeEventFromParameter() {
   //==== Event selections
   if (muons.size() != 1) return;
   if (muons.at(0).Pt() <= TriggerSafePtCut) return;
-  if (jets.size() < 4) return;
+  if (jets.size() < 5) return;
   if (METv.Pt() <= 20) return;
 
   //==== B-Tagging (DeepJet Medium WP example)
@@ -130,9 +130,50 @@ void Tutorial_reco_tt::executeEventFromParameter() {
     }
   }
 
-  if (NBJets != 2) return;
+  if (NBJets < 4) return;
   FillHist(this_syst + "/BaseLineCut_" + this_syst, 0., 1., 1, 0., 1.);
 
+  //==== Event Weight
+  float weight = 1.;
+  if (!IsDATA) {
+    weight *= MCweight();
+    weight *= ev.GetTriggerLumi("Full");
+    float muon_id_sf = myCorr->GetMuonIDSF(this_muon_id_sf_key, muons, MyCorrection::variation::nom);
+    weight *= muon_id_sf;
+    float pu_weight = myCorr->GetPUWeight(ev.nTrueInt(), MyCorrection::variation::nom);
+    weight *= pu_weight;
+    float btag_sf = myCorr->GetBTaggingSF(jets, 
+            JetTagging::JetFlavTagger::ParT, 
+            JetTagging::JetFlavTaggerWP::Medium,
+            JetTagging::JetTaggingSFMethod::comb,
+            MyCorrection::variation::nom
+        );
+    weight *= btag_sf;
+  }
+  //==== Basic kinematic plots after baseline selection
+  FillHist(this_syst + "/BaseLineCut/nJets_" + this_syst,
+           jets.size(), weight, 15, 0., 15.);
+  FillHist(this_syst + "/BaseLineCut/nBJets_" + this_syst,
+           NBJets, weight, 10, 0., 10.);
+
+  if (!jets.empty()) {
+    FillHist(this_syst + "/BaseLineCut/leadingJetPt_" + this_syst,
+             jets.at(0).Pt(), weight, 50, 0., 500.);
+    FillHist(this_syst + "/BaseLineCut/leadingJetEta_" + this_syst,
+             jets.at(0).Eta(), weight, 50, -2.5, 2.5);
+  }
+
+  if (!muons.empty()) {
+    FillHist(this_syst + "/BaseLineCut/muonPt_" + this_syst,
+             muons.at(0).Pt(), weight, 50, 0., 500.);
+    FillHist(this_syst + "/BaseLineCut/muonEta_" + this_syst,
+             muons.at(0).Eta(), weight, 50, -2.5, 2.5);
+  }
+
+  FillHist(this_syst + "/BaseLineCut/MET_" + this_syst,
+           METv.Pt(), weight, 50, 0., 500.);
+
+    
   //==== Take leading four jets in pT
   std::vector<unsigned int> top_b_jet_candidates;
   std::vector<unsigned int> had_W_candidates;
@@ -177,31 +218,10 @@ void Tutorial_reco_tt::executeEventFromParameter() {
     best_combinatoric = &tt_combinatoric_2;
   }
 
-  //==== Event Weight
-  float weight = 1.;
-  if (!IsDATA) {
-    weight *= MCweight();
-    weight *= ev.GetTriggerLumi("Full");
-    float muon_id_sf = myCorr->GetMuonIDSF(this_muon_id_sf_key, muons, MyCorrection::variation::nom);
-    weight *= muon_id_sf;
-    float pu_weight = myCorr->GetPUWeight(ev.nTrueInt(), MyCorrection::variation::nom);
-    weight *= pu_weight;
-    float btag_sf = myCorr->GetBTaggingSF(jets, 
-            JetTagging::JetFlavTagger::ParT, 
-            JetTagging::JetFlavTaggerWP::Medium,
-            JetTagging::JetTaggingSFMethod::comb,
-            MyCorrection::variation::nom
-        );
-    weight *= btag_sf;
-
     FillHist(this_syst + "/noChi2Cut/had_W_mass_" + this_syst, best_combinatoric->had_W_mass, weight, 40, 0., 200.);
     FillHist(this_syst + "/noChi2Cut/had_top_mass_" + this_syst, best_combinatoric->had_top_mass, weight, 80, 0., 400.);
     FillHist(this_syst + "/noChi2Cut/chi2_" + this_syst, best_combinatoric->best_chi2, weight, 1000, 0., 100000.);
-  } else {
-    FillHist(this_syst + "/noChi2Cut/had_W_mass_" + this_syst, best_combinatoric->had_W_mass, weight, 40, 0., 200.);
-    FillHist(this_syst + "/noChi2Cut/had_top_mass_" + this_syst, best_combinatoric->had_top_mass, weight, 80, 0., 400.);
-    FillHist(this_syst + "/noChi2Cut/chi2_" + this_syst, best_combinatoric->best_chi2, weight, 1000, 0., 100000.);
-  }
+  
 
   if(best_combinatoric->best_chi2 >= 2e3) return;
   FillHist(this_syst + "/PassChi2Cut_" + this_syst, 0., 1., 1, 0., 1.);
