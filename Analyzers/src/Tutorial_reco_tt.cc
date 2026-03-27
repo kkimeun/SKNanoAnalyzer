@@ -140,6 +140,18 @@ void Tutorial_reco_tt::executeEventFromParameter() {
     weight *= ev.GetTriggerLumi("Full");
     float muon_id_sf = myCorr->GetMuonIDSF(this_muon_id_sf_key, muons, MyCorrection::variation::nom);
     weight *= muon_id_sf;
+    float muon_trig_sf = myCorr->GetMuonTriggerSF(
+    "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
+    muons,
+    MyCorrection::variation::nom);
+    weight *= muon_trig_sf;
+
+    static int debug_count = 0;
+    if (debug_count < 10) {
+      std::cout << "muon_id_sf = " << muon_id_sf
+                << ", muon_trig_sf = " << muon_trig_sf << std::endl;
+      debug_count++;
+    }
     float pu_weight = myCorr->GetPUWeight(ev.nTrueInt(), MyCorrection::variation::nom);
     weight *= pu_weight;
     float btag_sf = myCorr->GetBTaggingSF(jets, 
