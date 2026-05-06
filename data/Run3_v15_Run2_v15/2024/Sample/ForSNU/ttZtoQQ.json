@@ -1,10 +1,32 @@
 {
     "name": "ttZtoQQ",
     "isMC": 1,
-    "PD": "TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFX-pythia8",
+    "PD": "TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8",
     "xsec": 0.6603,
-    "sumsign": -1,
-    "sumW": -1,
-    "nmc": 0,
-    "path": []
+    "sumsign": 35753.0,
+    "sumW": 115925.54177975655,
+    "nmc": 90817.0,
+    "path": [
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/077d2463-7698-4f6c-839b-95412c76c119.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/21692cfe-3a71-497f-8d9b-efb1ea380e5f.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/26b17eeb-f578-4c35-a602-0c54cee224c4.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/2b71f830-742e-4eb5-95b7-c2261524210b.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/41c36fca-03b7-4930-8595-549db749ed3c.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/49d6b501-5192-4525-8796-24fdbdf800de.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/84f96e8f-d6a9-4a06-846c-a9c1d388bda9.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/8f75e7a3-b011-4bfc-8adc-3ce6b89fc6ff.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/975f245d-5197-46b9-9470-b2a15fa4bef7.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/9de57cc5-69a9-4814-81d4-2281cce64d13.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/b10ca065-b0e3-463d-9985-63809a6feb52.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/b25699d6-3393-40d3-afeb-1a0be74d69eb.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/b5297e8e-b306-465c-b993-8fed6838a9e4.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/b55721b9-cfe9-4720-8dde-18d424274379.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/c95ccd69-2a2f-4418-ac70-3eda3fe65c4e.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2560000/fa1f0b45-1ccc-4a75-9089-1b1a27359398.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2810000/12b5909b-cdc9-4b4b-bf48-fb9c63bbcc62.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2810000/8c78ad7c-cfe1-4a06-8182-85dbab697dfe.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2810000/a58ef6cb-c093-45c8-a005-77672803bcef.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2810000/cabf7b25-7b62-4ad6-8c29-52e8fe0b7d5e.root",
+        "/gv0/Users/eunsu/SKNano/2024/store/mc/RunIII2024Summer24NanoAODv15/TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/2810000/e4f0792b-0f79-43c5-adb3-34a174e70584.root"
+    ]
 }

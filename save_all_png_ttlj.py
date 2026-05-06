@@ -3,8 +3,8 @@ import ROOT
 
 ROOT.gROOT.SetBatch(True)
 
-input_file = "/data9/Users/eunsu/SKNanoOutput/Tutorial_reco_tt/2024/TTLJ_powheg.root"
-output_dir = "/data9/Users/eunsu/SKNanoOutput/Tutorial_reco_tt/2024/png"
+input_file = "/data9/Users/eunsu/SKNanoOutput/Tutorial_reco_tt/2024/WtoLNu_4J.root"
+output_dir = "/data9/Users/eunsu/SKNanoOutput/Tutorial_reco_tt/2024/png_WtoLNu_4J"
 
 os.makedirs(output_dir, exist_ok=True)
 

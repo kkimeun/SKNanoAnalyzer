@@ -440,6 +440,16 @@
         "sumsign": 2054714.0,
         "sumW": 340956.55011084676
     },
+
+    "ttZtoQQ": {
+        "isMC": 1,
+        "PD": "TTZ-ZtoQQ-1Jets_TuneCP5_13p6TeV_amcatnloFXFXold-pythia8",
+        "xsec": 0.6603,
+        "nmc": 90817.0,
+        "sumsign": 35753.0,
+        "sumW": 115925.54177975655
+    },
+
     "ttWtoLNu_EWK": {
         "isMC": 1,
         "PD": "TTLNu-EWK_TuneCP5_13p6TeV_amcatnlo-pythia8",
@@ -652,15 +662,29 @@
         "sumsign": 91953615.0,
         "sumW": 32116997677.263794
     },
+
     "Muon0": {
         "isMC": 0,
         "periods": [
-            "C"
+            "C",
+            "D",
+            "E",
+            "F",
+            "G",
+            "H",
+            "I"
         ],
         "NEvents": [
-            96370595.0
+            96370595.0,
+            119197972.0,
+            168396264.0,
+            439336834.0,
+            624012667.0,
+            90811165.0,
+            93862043.0
         ]
     },
+
     "Muon1": {
         "isMC": 0,
         "periods": [

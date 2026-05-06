@@ -101,8 +101,8 @@ void MeasureJetTaggingEff::executeEventFromParameter() {
 
   //==== B-Tagging Efficiency Setup
   // Define binning for abseta and pt using RVec
-  const RVec<float> abseta_bins = {0., 0.8, 1.6, 2.5};
-  const RVec<float> pt_bins = {20., 30., 50., 70., 100., 140., 200., 300., 600., 1000.};
+  const RVec<float> abseta_bins = {0., 2.5};
+  const RVec<float> pt_bins = {20., 30., 50., 70., 100., 140., 200., 300., 600., 1000., 1400.};
 
   // Event weight
   float weight = 1.0; 

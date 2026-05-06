@@ -88,15 +88,50 @@ void Tutorial_reco_tt::executeEventFromParameter() {
   Particle METv = ev.GetMETVector(Event::MET_Type::PUPPI); 
 
   //==== Lepton Selection
-  std::vector<size_t> SelectedMuonIndices = SelectMuonIndices(AllMuonViews, this_muon_id, 15., 2.4);
-  std::vector<size_t> SelectedElectronIndices = SelectElectronIndices(AllElectronViews, Electron::ElectronID::POG_LOOSE, 15., 2.5);
-
-  if (SelectedMuonIndices.size() + SelectedElectronIndices.size() != 1) return;
+  std::vector<size_t> SelectedMuonIndices =
+      SelectMuonIndices(AllMuonViews, this_muon_id, 15., 2.4);
+  std::vector<size_t> SelectedElectronIndices =
+      SelectElectronIndices(AllElectronViews, Electron::ElectronID::POG_LOOSE, 15., 2.5);
 
   RVec<Muon> muons = MaterializeMuons(AllMuonViews, SelectedMuonIndices);
   RVec<Electron> electrons = MaterializeElectrons(AllElectronViews, SelectedElectronIndices);
 
+  // Require Tight PF isolation
+  RVec<Muon> tight_iso_muons;
+  for (const auto &mu : muons) {
+    if (mu.PassID(Muon::MuonID::POG_PFISO_TIGHT)) {
+      tight_iso_muons.push_back(mu);
+    }
+  }
+  muons = tight_iso_muons;
+
+  // Final single-muon channel definition
+  if (muons.size() != 1) return;
+  if (!electrons.empty()) return;
+
   FillHist(this_syst + "/BaseLineLeptonSelection_" + this_syst, 0., 1., 1, 0., 1.);
+
+//  //==== Lepton Selection
+//  std::vector<size_t> SelectedMuonIndices = SelectMuonIndices(AllMuonViews, this_muon_id, 15., 2.4);
+//  std::vector<size_t> SelectedElectronIndices = SelectElectronIndices(AllElectronViews, Electron::ElectronID::POG_LOOSE, 15., 2.5);
+
+//  if (SelectedMuonIndices.size() + SelectedElectronIndices.size() != 1) return;
+
+//  RVec<Muon> muons = MaterializeMuons(AllMuonViews, SelectedMuonIndices);
+//  RVec<Electron> electrons = MaterializeElectrons(AllElectronViews, SelectedElectronIndices);
+
+//  // Require Tight PF isolation for selected muon channel
+//  RVec<Muon> tight_iso_muons;
+//  for (const auto &mu : muons) {
+//    if (mu.PassID(Muon::MuonID::POG_TIGHT) &&
+//        mu.PassID(Muon::MuonID::POG_PFISO_TIGHT)) {
+//      tight_iso_muons.push_back(mu);
+//    }
+//  }
+//  muons = tight_iso_muons;
+
+
+//  FillHist(this_syst + "/BaseLineLeptonSelection_" + this_syst, 0., 1., 1, 0., 1.);
 
   //==== Jet Selection
   std::vector<size_t> SelectedJetIndices = SelectJetIndices(AllJetViews, Jet::JetID::TIGHT, 30., 2.4);
@@ -111,8 +146,9 @@ void Tutorial_reco_tt::executeEventFromParameter() {
 
   //==== Event selections
   if (muons.size() != 1) return;
+  if (!electrons.empty()) return;
   if (muons.at(0).Pt() <= TriggerSafePtCut) return;
-  if (jets.size() < 5) return;
+  if (jets.size() < 4) return;
   if (METv.Pt() <= 20) return;
 
   //==== B-Tagging (DeepJet Medium WP example)
@@ -130,7 +166,7 @@ void Tutorial_reco_tt::executeEventFromParameter() {
     }
   }
 
-  if (NBJets < 4) return;
+  if (NBJets != 2) return;
   FillHist(this_syst + "/BaseLineCut_" + this_syst, 0., 1., 1, 0., 1.);
 
   //==== Event Weight
@@ -140,16 +176,20 @@ void Tutorial_reco_tt::executeEventFromParameter() {
     weight *= ev.GetTriggerLumi("Full");
     float muon_id_sf = myCorr->GetMuonIDSF(this_muon_id_sf_key, muons, MyCorrection::variation::nom);
     weight *= muon_id_sf;
-    float muon_trig_sf = myCorr->GetMuonTriggerSF(
-    "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
-    muons,
-    MyCorrection::variation::nom);
-    weight *= muon_trig_sf;
+
+    float muon_iso_sf = myCorr->GetMuonISOSF("NUM_TightPFIso_DEN_TightID", muons, MyCorrection::variation::nom);
+    weight *= muon_iso_sf;
+
+    // float muon_trig_sf = myCorr->GetMuonTriggerSF(
+    // "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
+    // muons,
+    // MyCorrection::variation::nom);
+    // weight *= muon_trig_sf;
 
     static int debug_count = 0;
     if (debug_count < 10) {
       std::cout << "muon_id_sf = " << muon_id_sf
-                << ", muon_trig_sf = " << muon_trig_sf << std::endl;
+                << ", muon_iso_sf = " << muon_iso_sf << std::endl;
       debug_count++;
     }
     float pu_weight = myCorr->GetPUWeight(ev.nTrueInt(), MyCorrection::variation::nom);
