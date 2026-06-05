@@ -20,4 +20,6 @@
 #pragma link C++ class ExampleRun_base+;
 #pragma link C++ class Tutorial_reco_tt+;
 #pragma link C++ class MeasureJetTaggingEff+;
+#pragma link C++ class MLExample+;
+#pragma link C++ class AtobbMLTree+;
 #endif

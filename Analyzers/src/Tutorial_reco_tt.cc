@@ -304,7 +304,7 @@ void Tutorial_reco_tt::executeEventFromParameter() {
         );
     weight *= btag_sf;
 
-    if (MCSample.Contains("TT")) {
+    if (MCSample.Contains("TT") && !MCSample.Contains("HcToWA") && !MCSample.Contains("AToBB")) {
       auto [firstTopIdx, firstAntiTopIdx, lastTopIdx, lastAntiTopIdx] =
           GetTopAndAntiTopIndices(AllGenViews);
 

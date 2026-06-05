@@ -5,7 +5,7 @@ import cmsstyle
 # Map each MC file to a specific ROOT color and legend label
 # TTbar uses Red shades, Single Top uses Azure/Teal shades
 
-base_dir = "/data9/Users/bhoh/SKNanoOutput/Tutorial_reco_tt/2024"
+base_dir = "/data9/Users/eunsu/SKNanoOutput/Tutorial_reco_tt/2024"
 
 
 DATA_FILES = [
