@@ -464,12 +464,12 @@ void AtobbMLTree::FillTreeBranches(
   SetBranch("Training_Tree", "nJets_for_count", n_jets_for_count);
   SetBranch("Training_Tree", "nBJets", n_bjets);
 
-  SetBranch("Training_Tree", "Muon0_Pt",     float(muons.at(0).Pt()));
-  SetBranch("Training_Tree", "Muon0_Eta",    float(muons.at(0).Eta()));
-  SetBranch("Training_Tree", "Muon0_CosPhi", float(std::cos(muons.at(0).Phi())));
-  SetBranch("Training_Tree", "Muon0_SinPhi", float(std::sin(muons.at(0).Phi())));
-  SetBranch("Training_Tree", "Muon0_M",      float(muons.at(0).M()));
-  SetBranch("Training_Tree", "Muon0_isJet",  0);
+  SetBranch("Training_Tree", "Lepton0_Pt",     float(lepton.at(0).Pt()));
+  SetBranch("Training_Tree", "Lepton0_Eta",    float(lepton.at(0).Eta()));
+  SetBranch("Training_Tree", "Lepton0_CosPhi", float(std::cos(lepton.at(0).Phi())));
+  SetBranch("Training_Tree", "Lepton0_SinPhi", float(std::sin(lepton.at(0).Phi())));
+  SetBranch("Training_Tree", "Lepton0_M",      float(lepton.at(0).M()));
+  SetBranch("Training_Tree", "Lepton0_isJet",  0);
 
   SetBranch("Training_Tree", "MET_Pt",  float(METv.Pt()));
   SetBranch("Training_Tree", "MET_Phi", float(METv.Phi()));
