@@ -63,7 +63,8 @@ private:
   void FillDummyJetBranches(const TString& prefix);
 
   void FillTreeBranches(
-      RVec<Muon>& muons,
+      // RVec<Muon>& muons,
+      Lepton& lepton,
       RVec<Jet>& jets,
       Particle& METv,
       int n_bjets,

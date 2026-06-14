@@ -142,9 +142,20 @@ void AtobbMLTree::executeEvent() {
   RVec<Muon> muons = MaterializeMuons(AllMuonViews, SelectedMuonIndices);
   RVec<Electron> electrons = MaterializeElectrons(AllElectronViews, SelectedElectronIndices);
 
-  if (muons.size() != 1) return;
-  if (electrons.size() != 0) return;
-  if (muons.at(0).Pt() <= TriggerSafePtCut) return;
+  Lepton lepton;
+  if (muons.size() == 1) {
+    lepton = Lepton(muons.at(0));
+    if (muons.at(0).Pt() <= TriggerSafePtCut) return;
+  } else if (electrons.size() == 1) {
+    lepton = Lepton(electrons.at(0));
+    if (electrons.at(0).Pt() <= 32) return; //TODO: set electron trigger safe cut properly
+  } else {
+    return;
+  }
+
+//  if (muons.size() != 1) return;
+//  if (electrons.size() != 0) return;
+//  if (muons.at(0).Pt() <= TriggerSafePtCut) return;
 
   MyCorrection::variation jes_variation = MyCorrection::variation::nom;
   MyCorrection::variation btag_jes_variation = MyCorrection::variation::nom;
@@ -153,14 +164,14 @@ void AtobbMLTree::executeEvent() {
   auto jet_id = apply_pu_id ? Jet::JetID::PUID_LOOSE : Jet::JetID::TIGHT;
 
   std::vector<size_t> SelectedJetIndices =
-      SelectJetIndices(AllJetViews, jet_id, 0., 2.4, jes_variation, MyCorrection::variation::nom);
+      SelectJetIndices(AllJetViews, jet_id, 0., 5.191, jes_variation, MyCorrection::variation::nom);
 
   RVec<Jet> jets =
       MaterializeJets(AllJetViews, SelectedJetIndices, jes_variation, MyCorrection::variation::nom);
 
   jets = JetsVetoLeptonInside(jets, electrons, muons, 0.3);
 
-  std::sort(muons.begin(), muons.end(), PtComparing);
+  // std::sort(muons.begin(), muons.end(), PtComparing);
   std::sort(jets.begin(), jets.end(), PtComparing);
 
   if (jets.size() < 6) return;
@@ -342,7 +353,7 @@ void AtobbMLTree::executeEvent() {
       for (unsigned int w2 = w1 + 1; w2 < had_W_candidates.size(); w2++) {
         for (unsigned int b_idx = 0; b_idx < 2; b_idx++) {
           ttCombinatoric comb;
-          comb.lepton = &(muons.at(0));
+          comb.lepton = &lepton;
           comb.jets = &jets;
           comb.met = &METv;
           comb.had_W_jet_idx_1 = had_W_candidates.at(w1);
@@ -373,7 +384,8 @@ void AtobbMLTree::executeEvent() {
   }
 
   FillTreeBranches(
-      muons,
+      // muons,
+      lepton,
       jets,
       METv,
       n_bjets,
@@ -423,7 +435,8 @@ void AtobbMLTree::FillDummyJetBranches(const TString& prefix) {
 }
 
 void AtobbMLTree::FillTreeBranches(
-    RVec<Muon>& muons,
+    Lepton& lepton,
+    // RVec<Muon>& muons,
     RVec<Jet>& jets,
     Particle& METv,
     int n_bjets,
@@ -464,11 +477,11 @@ void AtobbMLTree::FillTreeBranches(
   SetBranch("Training_Tree", "nJets_for_count", n_jets_for_count);
   SetBranch("Training_Tree", "nBJets", n_bjets);
 
-  SetBranch("Training_Tree", "Lepton0_Pt",     float(lepton.at(0).Pt()));
-  SetBranch("Training_Tree", "Lepton0_Eta",    float(lepton.at(0).Eta()));
-  SetBranch("Training_Tree", "Lepton0_CosPhi", float(std::cos(lepton.at(0).Phi())));
-  SetBranch("Training_Tree", "Lepton0_SinPhi", float(std::sin(lepton.at(0).Phi())));
-  SetBranch("Training_Tree", "Lepton0_M",      float(lepton.at(0).M()));
+  SetBranch("Training_Tree", "Lepton0_Pt",     float(lepton.Pt()));
+  SetBranch("Training_Tree", "Lepton0_Eta",    float(lepton.Eta()));
+  SetBranch("Training_Tree", "Lepton0_CosPhi", float(std::cos(lepton.Phi())));
+  SetBranch("Training_Tree", "Lepton0_SinPhi", float(std::sin(lepton.Phi())));
+  SetBranch("Training_Tree", "Lepton0_M",      float(lepton.M()));
   SetBranch("Training_Tree", "Lepton0_isJet",  0);
 
   SetBranch("Training_Tree", "MET_Pt",  float(METv.Pt()));
@@ -479,7 +492,7 @@ void AtobbMLTree::FillTreeBranches(
     HT += float(jet.Pt());
   }
   SetBranch("Training_Tree", "HT", HT);
-  SetBranch("Training_Tree", "ST", HT + float(muons.at(0).Pt()) + float(METv.Pt()));
+  SetBranch("Training_Tree", "ST", HT + float(lepton.Pt()) + float(METv.Pt()));
 
   for (unsigned int i = 0; i < 6; i++) {
     TString prefix = "Jet" + TString(std::to_string(i));
