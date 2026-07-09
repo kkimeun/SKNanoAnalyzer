@@ -296,8 +296,15 @@ void AtobbMLTree::executeEvent() {
 
     weight_pu = myCorr->GetPUWeight(ev.nTrueInt(), MyCorrection::variation::nom);
 
+    RVec<Jet> jets_2p5;
+    for (auto jet : jets) {
+      if (std::abs(jet.Eta()) < 2.499 && jet.Pt() > 20.) {
+        jets_2p5.push_back(jet);
+      }
+    }
+
     weight_btag = myCorr->GetBTaggingSF(
-        jets,
+        jets_2p5,
         JetTagging::JetFlavTagger::ParT,
         JetTagging::JetFlavTaggerWP::Medium,
         JetTagging::JetTaggingSFMethod::comb,
@@ -383,11 +390,14 @@ void AtobbMLTree::executeEvent() {
     }
   }
 
+  
+
   FillTreeBranches(
       // muons,
       lepton,
       jets,
       METv,
+      btag_vector,
       n_bjets,
       n_jets_for_count,
       btag_wp_cut,
@@ -406,6 +416,7 @@ void AtobbMLTree::executeEvent() {
       lep_top_mass
   );
 }
+
 
 void AtobbMLTree::FillJetBranches(const TString& prefix, const Jet& jet, float btag_wp_cut) {
   float bscore = jet.GetTaggerResult(
@@ -433,12 +444,193 @@ void AtobbMLTree::FillDummyJetBranches(const TString& prefix) {
   SetBranch("Training_Tree", prefix + "_isBtag", 0);
   SetBranch("Training_Tree", prefix + "_isJet", 0);
 }
+void AtobbMLTree::FillAtoBBHighLevelBranches(
+    RVec<Jet>& jets,
+    const std::vector<bool>& btag_vector,
+    float btag_wp_cut
+) {
+  const float target_MA = 60.f;
+
+  float A_mass_best = -999.f;
+  float A_dr_best = -999.f;
+  float A_pt_best = -999.f;
+  float A_eta_best = -999.f;
+  float A_bscore_sum_best = -999.f;
+  float A_bscore_min_best = -999.f;
+  int A_pair_idx1 = -1;
+  int A_pair_idx2 = -1;
+
+  float bb_mass_min_all = 999999.f;
+  float bb_mass_max_all = -999.f;
+  float bb_mass_at_min_dr = -999.f;
+  float bb_dr_min_all = 999999.f;
+  float bb_dr_max_all = -999.f;
+  float bb_mass_closest_MA60_all = 999999.f;
+  float bb_mass_spread_all = -999.f;
+
+  float bscore_max = -999.f;
+  float bscore_2nd = -999.f;
+  float bscore_3rd = -999.f;
+  float bscore_sum = 0.f;
+  float bscore_sum_top4 = 0.f;
+
+  // A candidate pT / mass ratio, bb pair centrality, and mass*dr, which are expected to be somewhat correlated with the correct pairing and the A kinematics
+  float A_pt_over_mass = -999.f;
+  float A_eta_abs = -999.f;
+  float A_mass_dr = -999.f;
+  float A_pt_balance_best = -999.f;
+
+  // if (A_mass_best > 0 && A_pt_best > 0 && A_dr_best > 0) {
+  //  A_pt_over_mass = A_pt_best / A_mass_best;
+  //  A_eta_abs = std::abs(A_eta_best);
+  //  A_mass_dr = A_mass_best * A_dr_best;
+  // }
+  //
+
+  std::vector<std::pair<float, unsigned int>> bscore_pairs;
+  std::vector<unsigned int> bjet_indices;
+
+  for (unsigned int i = 0; i < jets.size(); i++) {
+    float bscore = jets.at(i).GetTaggerResult(
+        JetTagging::JetFlavTagger::ParT,
+        JetTagging::JetFlavTaggerScoreType::B
+    );
+
+    bscore_sum += bscore;
+    bscore_pairs.push_back({bscore, i});
+
+    if (bscore > btag_wp_cut) {
+      bjet_indices.push_back(i);
+    }
+  }
+
+  std::sort(
+      bscore_pairs.begin(),
+      bscore_pairs.end(),
+      [](const auto& a, const auto& b) { return a.first > b.first; }
+  );
+
+  if (bscore_pairs.size() > 0) bscore_max = bscore_pairs.at(0).first;
+  if (bscore_pairs.size() > 1) bscore_2nd = bscore_pairs.at(1).first;
+  if (bscore_pairs.size() > 2) bscore_3rd = bscore_pairs.at(2).first;
+
+  for (unsigned int i = 0; i < std::min<unsigned int>(4, bscore_pairs.size()); i++) {
+    bscore_sum_top4 += bscore_pairs.at(i).first;
+  }
+
+  float best_mass_diff = 999999.f;
+
+  for (unsigned int a = 0; a < bjet_indices.size(); a++) {
+    for (unsigned int b = a + 1; b < bjet_indices.size(); b++) {
+      unsigned int i = bjet_indices.at(a);
+      unsigned int j = bjet_indices.at(b);
+
+      TLorentzVector b1 = static_cast<TLorentzVector>(jets.at(i));
+      TLorentzVector b2 = static_cast<TLorentzVector>(jets.at(j));
+      TLorentzVector A = b1 + b2;
+
+      float mass = A.M();
+      float dr = b1.DeltaR(b2);
+
+      float bscore1 = jets.at(i).GetTaggerResult(
+          JetTagging::JetFlavTagger::ParT,
+          JetTagging::JetFlavTaggerScoreType::B
+      );
+      float bscore2 = jets.at(j).GetTaggerResult(
+          JetTagging::JetFlavTagger::ParT,
+          JetTagging::JetFlavTaggerScoreType::B
+      );
+
+      if (mass < bb_mass_min_all) bb_mass_min_all = mass;
+      if (mass > bb_mass_max_all) bb_mass_max_all = mass;
+
+      if (dr < bb_dr_min_all) {
+        bb_dr_min_all = dr;
+        bb_mass_at_min_dr = mass;
+      }
+
+      if (dr > bb_dr_max_all) bb_dr_max_all = dr;
+
+      float mass_diff = std::abs(mass - target_MA);
+      if (mass_diff < bb_mass_closest_MA60_all) {
+        bb_mass_closest_MA60_all = mass_diff;
+      }
+
+      if (mass_diff < best_mass_diff) {
+        best_mass_diff = mass_diff;
+
+        float pt1 = b1.Pt();
+        float pt2 = b2.Pt();
+
+        if ((pt1 + pt2) > 0) {
+          A_pt_balance_best = std::abs(pt1 - pt2) / (pt1 + pt2);
+        }
+
+        A_mass_best = mass;
+        A_dr_best = dr;
+        A_pt_best = A.Pt();
+        A_eta_best = A.Eta();
+        A_bscore_sum_best = bscore1 + bscore2;
+        A_bscore_min_best = std::min(bscore1, bscore2);
+        A_pair_idx1 = i;
+        A_pair_idx2 = j;
+      }
+    }
+  }
+
+  if (bb_mass_min_all < 999998.f && bb_mass_max_all > -998.f) {
+    bb_mass_spread_all = bb_mass_max_all - bb_mass_min_all;
+  } else {
+    bb_mass_min_all = -999.f;
+    bb_mass_max_all = -999.f;
+    bb_mass_closest_MA60_all = -999.f;
+    bb_dr_min_all = -999.f;
+    bb_dr_max_all = -999.f;
+  }
+
+  if (A_mass_best > 0 && A_pt_best > 0 && A_dr_best > 0) {
+  A_pt_over_mass = A_pt_best / A_mass_best;
+  A_eta_abs = std::abs(A_eta_best);
+  A_mass_dr = A_mass_best * A_dr_best;
+}
+
+
+  SetBranch("Training_Tree", "A_mass_best", A_mass_best);
+  SetBranch("Training_Tree", "A_dr_best", A_dr_best);
+  SetBranch("Training_Tree", "A_pt_best", A_pt_best);
+  SetBranch("Training_Tree", "A_eta_best", A_eta_best);
+  SetBranch("Training_Tree", "A_bscore_sum_best", A_bscore_sum_best);
+  SetBranch("Training_Tree", "A_bscore_min_best", A_bscore_min_best);
+  SetBranch("Training_Tree", "A_pair_idx1", A_pair_idx1);
+  SetBranch("Training_Tree", "A_pair_idx2", A_pair_idx2);
+
+  SetBranch("Training_Tree", "bb_mass_min_all", bb_mass_min_all);
+  SetBranch("Training_Tree", "bb_mass_max_all", bb_mass_max_all);
+  SetBranch("Training_Tree", "bb_mass_at_min_dr", bb_mass_at_min_dr);
+  SetBranch("Training_Tree", "bb_dr_min_all", bb_dr_min_all);
+  SetBranch("Training_Tree", "bb_dr_max_all", bb_dr_max_all);
+  SetBranch("Training_Tree", "bb_mass_closest_MA60_all", bb_mass_closest_MA60_all);
+  SetBranch("Training_Tree", "bb_mass_spread_all", bb_mass_spread_all);
+
+  SetBranch("Training_Tree", "bscore_max", bscore_max);
+  SetBranch("Training_Tree", "bscore_2nd", bscore_2nd);
+  SetBranch("Training_Tree", "bscore_3rd", bscore_3rd);
+  SetBranch("Training_Tree", "bscore_sum", bscore_sum);
+  SetBranch("Training_Tree", "bscore_sum_top4", bscore_sum_top4);
+
+  SetBranch("Training_Tree", "A_pt_over_mass", A_pt_over_mass);
+  SetBranch("Training_Tree", "A_eta_abs", A_eta_abs);
+  SetBranch("Training_Tree", "A_mass_dr", A_mass_dr);
+
+  SetBranch("Training_Tree", "A_pt_balance_best", A_pt_balance_best);
+}
 
 void AtobbMLTree::FillTreeBranches(
     Lepton& lepton,
     // RVec<Muon>& muons,
     RVec<Jet>& jets,
     Particle& METv,
+    const std::vector<bool>& btag_vector,
     int n_bjets,
     int n_jets_for_count,
     float btag_wp_cut,
@@ -541,6 +733,8 @@ void AtobbMLTree::FillTreeBranches(
   SetBranch("Training_Tree", "bb_dr_01", bb_dr_01);
   SetBranch("Training_Tree", "bb_dr_02", bb_dr_02);
   SetBranch("Training_Tree", "bb_dr_12", bb_dr_12);
+  
+  FillAtoBBHighLevelBranches(jets, btag_vector, btag_wp_cut);
 
   SetBranch("Training_Tree", "best_chi2", best_chi2);
   SetBranch("Training_Tree", "had_W_mass", had_W_mass);

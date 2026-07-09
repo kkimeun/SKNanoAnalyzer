@@ -62,11 +62,18 @@ private:
   void FillJetBranches(const TString& prefix, const Jet& jet, float btag_wp_cut);
   void FillDummyJetBranches(const TString& prefix);
 
+  void FillAtoBBHighLevelBranches(
+    RVec<Jet>& jets,
+    const std::vector<bool>& btag_vector,
+    float btag_wp_cut
+  );
+
   void FillTreeBranches(
       // RVec<Muon>& muons,
       Lepton& lepton,
       RVec<Jet>& jets,
       Particle& METv,
+      const std::vector<bool>& btag_vector,
       int n_bjets,
       int n_jets_for_count,
       float btag_wp_cut,
