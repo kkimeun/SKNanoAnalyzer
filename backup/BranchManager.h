@@ -96,16 +96,6 @@ public:
         if (target < 0)
             return;
         if (!active) {
-            // DEBUG: print scalar branch name before activation
-            std::cerr << "[DEBUG BranchScalar] branchName=["
-                      << branchName << "]" << std::endl;
-
-            // DEBUG: explicitly report an empty scalar branch name
-            if (branchName.empty()) {
-                std::cerr << "[DEBUG BranchScalar] ERROR: empty branchName"
-                          << std::endl;
-            }
-
             std::cout << "[BranchManager] activating branch '" << branchName
                       << "'" << std::endl;
             tree->SetBranchStatus(branchName.c_str(), 1);
@@ -172,18 +162,8 @@ public:
         if (needsRebind)
             bindAddress();
         if (!active) {
-            // DEBUG: print vector branch name before activation
-            // std::cerr << "[DEBUG BranchVector] branchName=["
-            //           << branchName << "]" << std::endl;
-
-            // DEBUG: explicitly report an empty vector branch name
-            // if (branchName.empty()) {
-            //     std::cerr << "[DEBUG BranchVector] ERROR: empty branchName"
-            //               << std::endl;
-            // }
-
-            // std::cout << "[BranchManager] activating branch '" << branchName
-            //           << "'" << std::endl;
+            std::cout << "[BranchManager] activating branch '" << branchName
+                      << "'" << std::endl;
             tree->SetBranchStatus(branchName.c_str(), 1);
             active = true;
             capacity = 0;
@@ -270,18 +250,8 @@ public:
         if (needsRebind)
             bindAddress();
         if (!active) {
-            // DEBUG: print bool-vector branch name before activation
-            // std::cerr << "[DEBUG BranchVector<bool>] branchName=["
-            //           << branchName << "]" << std::endl;
-
-            // DEBUG: explicitly report an empty bool-vector branch name
-            // if (branchName.empty()) {
-            //     std::cerr << "[DEBUG BranchVector<bool>] ERROR: empty branchName"
-            //               << std::endl;
-            // }
-
             tree->SetBranchStatus(branchName.c_str(), 1);
-            // std::cout << "[BranchManager] activating branch '" << branchName << "'" << std::endl;
+            std::cout << "[BranchManager] activating branch '" << branchName << "'" << std::endl;
             active = true;
             capacity = 0;
             recordActiveBranch(branchName);

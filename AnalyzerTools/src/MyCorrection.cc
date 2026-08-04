@@ -123,11 +123,11 @@ MyCorrection::MyCorrection(const TString &era, const TString &period,
   // Please use ####### as placeholder
   if (!IsData) {
     JME_JER_GT["2024"] =
-        "Summer24Prompt24_JRV1_MC_######_AK4PFPuppi";
+        "Summer24Prompt24_JRV2_MC_######_AK4PFPuppi";
                                                                // because real
                                                                // content of
                                                                // file is this
-    JME_JES_GT["2024"] = "Summer24Prompt24_V3_MC_######_AK4PFPuppi";
+    JME_JES_GT["2024"] = "Summer24Prompt24_V5_MC_######_AK4PFPuppi";
   } else {
     // JME_JER_GT["2024"] =
     // "Summer23BPixPrompt23_RunD_JRV1_DATA_######_AK4PFPuppi"; // this is
@@ -1508,7 +1508,16 @@ float MyCorrection::GetJER(const float eta, const float pt,
     );
   }
   cset_string.replace(cset_string.find("######"), 6, "PtResolution");
+
+  // for debugging
+  // std::cerr << "[DEBUG GetJER] lookup key = ["
+  //           << cset_string << "]" << std::endl;  
+
   cset = cset_jerc->at(cset_string);
+
+  // for debugging
+  // std::cerr << "[DEBUG GetJER] key found successfully" << std::endl;  
+
   return safeEvaluate(cset, "GetJER", {eta, pt, rho});
 }
 

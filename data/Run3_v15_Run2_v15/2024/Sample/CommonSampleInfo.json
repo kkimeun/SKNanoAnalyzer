@@ -680,7 +680,7 @@
     },
     "TTToHcToWAToBB-MHc100_MA60_SingleLepFilter": {
         "isMC": 1,
-        "PD": "TTToHcToWAToBB_MHc-100_MA-60_TuneCP5_cff",
+        "PD": "TTToHcToWAToBB_MHc-100_MA-60_SingleLepFilter_TuneCP5_cff",
         "xsec": 0.016656246994325285,
         "nmc": 206992.0,
         "sumsign": 206992.0,
