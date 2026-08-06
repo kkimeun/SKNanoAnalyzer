@@ -26,3 +26,6 @@ DataCOPY/**
 MCCOPY/**
 .vscode/**
 .cursor/**
+
+# NanoAOD comparison plots
+nanoaod_filter_lepton_pt_comparison/
