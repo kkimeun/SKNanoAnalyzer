@@ -44,3 +44,18 @@ systematics:
 
   - syst: Top_Pt_Reweight
     oneSided: true
+
+  - syst: Luminosity
+    target: Luminosity
+
+  - syst: Muon_Momentum
+    source: "total"
+    evtLoopAgain: true
+
+  - syst: Electron_Scale
+    source: "total"
+    evtLoopAgain: true
+
+  - syst: Electron_Resolution
+    source: "total"
+    evtLoopAgain: true

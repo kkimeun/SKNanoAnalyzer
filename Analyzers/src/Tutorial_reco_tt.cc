@@ -98,6 +98,60 @@ void Tutorial_reco_tt::executeEventFromParameter() {
   const TString this_syst = systHelper->getCurrentSysName();
   if (IsDATA && this_syst != "Central") return;
 
+  //======================================================================
+  // [ADD] Lepton momentum/energy shape systematic variations
+  //
+  // Muon:
+  //   Rochester correction에서 scale/spread/smearing uncertainty를
+  //   하나의 Muon_Momentum Up/Down으로 처리한다.
+  //
+  // Electron:
+  //   Electron_Scale      : energy-scale uncertainty
+  //   Electron_Resolution : MC smearing uncertainty
+  //======================================================================
+
+  MyCorrection::variation muon_momentum_variation =
+      MyCorrection::variation::nom;
+
+  MyCorrection::variation electron_scale_variation =
+      MyCorrection::variation::nom;
+
+  MyCorrection::variation electron_resolution_variation =
+      MyCorrection::variation::nom;
+
+
+  // Muon Rochester momentum uncertainty
+  if (this_syst.Contains("Muon_Momentum")) {
+    if (this_syst.Contains("Up")) {
+      muon_momentum_variation = MyCorrection::variation::up;
+    } else if (this_syst.Contains("Down")) {
+      muon_momentum_variation = MyCorrection::variation::down;
+    }
+  }
+
+
+  // Electron energy-scale uncertainty
+  if (this_syst.Contains("Electron_Scale")) {
+    if (this_syst.Contains("Up")) {
+      electron_scale_variation = MyCorrection::variation::up;
+    } else if (this_syst.Contains("Down")) {
+      electron_scale_variation = MyCorrection::variation::down;
+    }
+  }
+
+
+  // Electron resolution/smearing uncertainty
+  if (this_syst.Contains("Electron_Resolution")) {
+    if (this_syst.Contains("Up")) {
+      electron_resolution_variation = MyCorrection::variation::up;
+    } else if (this_syst.Contains("Down")) {
+      electron_resolution_variation = MyCorrection::variation::down;
+    }
+  }
+  //======================= [END ADD] ====================================
+
+
+
   Muon::MuonID this_muon_id = MuonIDs[0];
   TString this_muon_id_sf_key = MuonIDISOSFKeys[0];
   TString this_muon_iso_sf_key = MuonIDISOSFKeys[1];
@@ -157,6 +211,115 @@ void Tutorial_reco_tt::executeEventFromParameter() {
 
   RVec<Muon> muons = MaterializeMuons(AllMuonViews, SelectedMuonIndices);
   RVec<Electron> electrons = MaterializeElectrons(AllElectronViews, SelectedElectronIndices);
+
+  //======================================================================
+  // [SYSTEMATIC ADD] Apply lepton momentum/energy corrections
+  //                  and propagate their changes to MET
+  //
+  // MET propagation:
+  //
+  //   MET_new = MET_old - (pT_lepton_new - pT_lepton_old)
+  //
+  // This preserves the transverse momentum balance after changing
+  // the selected lepton momentum.
+  //======================================================================
+
+
+  //--------------------------------------------------------------------
+  // 1. Store lepton transverse momentum BEFORE the additional variation
+  //--------------------------------------------------------------------
+  double old_lepton_px = 0.;
+  double old_lepton_py = 0.;
+
+  for (const auto &muon : muons) {
+    old_lepton_px += muon.Px();
+    old_lepton_py += muon.Py();
+  }
+
+  for (const auto &electron : electrons) {
+    old_lepton_px += electron.Px();
+    old_lepton_py += electron.Py();
+  }
+
+
+  //--------------------------------------------------------------------
+  // 2. Apply muon Rochester momentum Up/Down
+  //
+  // The nominal Rochester correction is already contained in correctedPt
+  // when AllMuonViews is created.
+  //
+  // ScaleMuons() throws for variation::nom, so call it only for
+  // Muon_Momentum_Up/Down.
+  //--------------------------------------------------------------------
+  if (muon_momentum_variation != MyCorrection::variation::nom) {
+    muons = ScaleMuons(muons, muon_momentum_variation);
+  }
+
+
+  //--------------------------------------------------------------------
+  // 3. Apply electron corrections
+  //
+  // ScaleElectrons(..., nom):
+  //   returns electrons unchanged.
+  //
+  // SmearElectrons(..., nom):
+  //   applies nominal Run-3 MC resolution smearing.
+  //
+  // Therefore nominal electron smearing is applied to every MC iteration,
+  // while Electron_Resolution_Up/Down replaces the nominal smearing
+  // variation appropriately.
+  //--------------------------------------------------------------------
+  if (!IsDATA) {
+    electrons =
+        ScaleElectrons(ev, electrons, electron_scale_variation);
+
+    electrons =
+        SmearElectrons(electrons, electron_resolution_variation);
+  }
+
+
+  //--------------------------------------------------------------------
+  // 4. Store lepton transverse momentum AFTER correction/variation
+  //--------------------------------------------------------------------
+  double new_lepton_px = 0.;
+  double new_lepton_py = 0.;
+
+  for (const auto &muon : muons) {
+    new_lepton_px += muon.Px();
+    new_lepton_py += muon.Py();
+  }
+
+  for (const auto &electron : electrons) {
+    new_lepton_px += electron.Px();
+    new_lepton_py += electron.Py();
+  }
+
+
+  //--------------------------------------------------------------------
+  // 5. Propagate the lepton momentum change to MET
+  //
+  // Particle inherits from TLorentzVector, so SetPxPyPzE() is available.
+  // MET is treated as a massless transverse four-vector:
+  //   pz = 0
+  //   E  = sqrt(px^2 + py^2)
+  //--------------------------------------------------------------------
+  const double delta_lepton_px = new_lepton_px - old_lepton_px;
+  const double delta_lepton_py = new_lepton_py - old_lepton_py;
+
+  const double propagated_met_px = METv.Px() - delta_lepton_px;
+  const double propagated_met_py = METv.Py() - delta_lepton_py;
+  const double propagated_met_pt =
+      std::hypot(propagated_met_px, propagated_met_py);
+
+  METv.SetPxPyPzE(
+      propagated_met_px,
+      propagated_met_py,
+      0.,
+      propagated_met_pt
+  );
+
+  //==================== [END SYSTEMATIC ADD] =============================
+
   sort(muons.begin(), muons.end(), PtComparing);
   sort(electrons.begin(), electrons.end(), PtComparing);
 
@@ -391,6 +554,36 @@ void Tutorial_reco_tt::executeEventFromParameter() {
           return 1.f;
         };
     weight_function_map["Central"] = central_lambda;
+
+  //======================================================================
+  // [ADD] Integrated luminosity uncertainty
+  //
+  // This is a normalization-only systematic:
+  //   nominal event weight × (1 ± luminosity uncertainty)
+  //
+  // Do NOT multiply ev.GetTriggerLumi("Full") again here.
+  //======================================================================
+
+  std::function<float(MyCorrection::variation, TString)> luminosity_lambda =
+      [&](MyCorrection::variation syst, TString source) {
+        (void)source;
+
+        const float luminosity_uncertainty = 0.016f;
+
+        if (syst == MyCorrection::variation::up) {
+          return 1.f + luminosity_uncertainty;
+        }
+
+        if (syst == MyCorrection::variation::down) {
+          return 1.f - luminosity_uncertainty;
+        }
+
+        return 1.f;
+      };
+
+  weight_function_map["Luminosity"] = luminosity_lambda;
+
+  //======================= [END ADD] ====================================
 
     std::function<float(MyCorrection::variation, TString)> muon_id_lambda =
         [&](MyCorrection::variation syst, TString source) {
