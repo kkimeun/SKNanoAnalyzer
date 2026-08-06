@@ -668,8 +668,45 @@
         "sumsign": 4078419.0,
         "sumW": 5173266.050202004
     },
+    "TTToHcToWAToBB-MHc70_MA15": {
+        "isMC": 1,
+        "PD": "TTToHcToWAToBB_MHc-70_MA-15_TuneCP5_cff",
+        "xsec": 0.016656246994325285,
+        "nmc": 362187.0,
+        "sumsign": 362187.0,
+        "sumW": 11234511.0,
+        "filterEff": 1.0
+    },
+    "TTToHcToWAToBB-MHc100_MA60": {
+        "isMC": 1,
+        "PD": "TTToHcToWAToBB_MHc-100_MA-60_TuneCP5_cff",
+        "xsec": 0.016656246994325285,
+        "nmc": 361904.0,
+        "sumsign": 361904.0,
+        "sumW": 13480214.0,
+        "filterEff": 1.0
+    },
+    "TTToHcToWAToBB-MHc130_MA90": {
+        "isMC": 1,
+        "PD": "TTToHcToWAToBB_MHc-130_MA-90_TuneCP5_cff",
+        "xsec": 0.016656246994325285,
+        "nmc": 328174.0,
+        "sumsign": 328174.0,
+        "sumW": 9316792.0,
+        "filterEff": 1.0
+    },
+    "TTToHcToWAToBB-MHc160_MA155": {
+        "isMC": 1,
+        "PD": "TTToHcToWAToBB_MHc-160_MA-155_TuneCP5_cff",
+        "xsec": 0.016656246994325285,
+        "nmc": 360000.0,
+        "sumsign": 360000.0,
+        "sumW": 79.5161,
+        "filterEff": 1.0
+    },
 
-        "TTToHcToWAToBB-MHc70_MA15_SingleLepFilter": {
+
+    "TTToHcToWAToBB-MHc70_MA15_SingleLepFilter": {
         "isMC": 1,
         "PD": "TTToHcToWAToBB_MHc-70_MA-15_SingleLepFilter_TuneCP5_cff",
         "xsec": 0.016656246994325285,
