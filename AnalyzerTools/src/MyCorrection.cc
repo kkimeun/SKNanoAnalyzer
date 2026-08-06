@@ -132,7 +132,7 @@ MyCorrection::MyCorrection(const TString &era, const TString &period,
     // JME_JER_GT["2024"] =
     // "Summer23BPixPrompt23_RunD_JRV1_DATA_######_AK4PFPuppi"; // this is
     // because real content of file is this
-    JME_JES_GT["2024"] = "Summer24Prompt24_V3_DATA_######_AK4PFPuppi";
+    JME_JES_GT["2024"] = "Summer24Prompt24_V5_DATA_######_AK4PFPuppi";
   }
 
   JME_vetomap_keys["2024"] = "Summer24Prompt24_RunBCDEFGHI_V1";
