@@ -86,7 +86,8 @@ void AtobbMLTree::executeEvent() {
   ev = GetEvent();
 
   if (!PassMetFilter(AllJetViews, ev)) return;
-  if (IsoMuTriggerName != "" && !(ev.PassTrigger(IsoMuTriggerName))) return;
+  // for electron channel, we don't apply trigger requirement for now
+  // if (IsoMuTriggerName != "" && !(ev.PassTrigger(IsoMuTriggerName))) return;
 
   Particle METv = ev.GetMETVector(Event::MET_Type::PUPPI);
 
@@ -135,7 +136,7 @@ void AtobbMLTree::executeEvent() {
   }
 
   std::vector<size_t> SelectedElectronIndices =
-      SelectElectronIndices(AllElectronViews, Electron::ElectronID::POG_LOOSE, 15., 2.5);
+      SelectElectronIndices(AllElectronViews, Electron::ElectronID::POG_MVAISO_WP80, 15., 2.5);
 
   if (SelectedMuonIndices.size() + SelectedElectronIndices.size() != 1) return;
 
@@ -143,19 +144,19 @@ void AtobbMLTree::executeEvent() {
   RVec<Electron> electrons = MaterializeElectrons(AllElectronViews, SelectedElectronIndices);
 
   Lepton lepton;
+  int lepton_pdgid = 0;
+  
   if (muons.size() == 1) {
     lepton = Lepton(muons.at(0));
+    lepton_pdgid = 13;
     if (muons.at(0).Pt() <= TriggerSafePtCut) return;
   } else if (electrons.size() == 1) {
     lepton = Lepton(electrons.at(0));
+    lepton_pdgid = 11;
     if (electrons.at(0).Pt() <= 32) return; //TODO: set electron trigger safe cut properly
   } else {
     return;
   }
-
-//  if (muons.size() != 1) return;
-//  if (electrons.size() != 0) return;
-//  if (muons.at(0).Pt() <= TriggerSafePtCut) return;
 
   MyCorrection::variation jes_variation = MyCorrection::variation::nom;
   MyCorrection::variation btag_jes_variation = MyCorrection::variation::nom;
@@ -272,26 +273,30 @@ void AtobbMLTree::executeEvent() {
     weight_mc = MCweight();
     weight_trigger_lumi = ev.GetTriggerLumi("Full");
 
-    weight_muon_id = myCorr->GetMuonIDSF(
-        this_muon_id_sf_key,
-        muons,
-        MyCorrection::variation::nom
-    );
+    // Muon SFs: apply only for muon-channel events
+    if (muons.size() == 1) {
 
-    if (!use_pog_mva_tight_muon_id) {
-      weight_muon_iso = myCorr->GetMuonIDSF(
-          this_muon_iso_sf_key,
+      weight_muon_id = myCorr->GetMuonIDSF(
+          this_muon_id_sf_key,
           muons,
           MyCorrection::variation::nom
       );
-    }
 
-    if (use_pog_tight_muon_id) {
-      weight_muon_trig = myCorr->GetMuonTriggerSF(
-          this_muon_trig_sf_key,
-          muons,
-          MyCorrection::variation::nom
-      );
+      if (!use_pog_mva_tight_muon_id) {
+        weight_muon_iso = myCorr->GetMuonIDSF(
+            this_muon_iso_sf_key,
+            muons,
+            MyCorrection::variation::nom
+        );
+      }
+
+      if (use_pog_tight_muon_id) {
+        weight_muon_trig = myCorr->GetMuonTriggerSF(
+            this_muon_trig_sf_key,
+            muons,
+            MyCorrection::variation::nom
+        );
+      }
     }
 
     weight_pu = myCorr->GetPUWeight(ev.nTrueInt(), MyCorrection::variation::nom);
@@ -393,8 +398,8 @@ void AtobbMLTree::executeEvent() {
   
 
   FillTreeBranches(
-      // muons,
       lepton,
+      lepton_pdgid,
       jets,
       METv,
       btag_vector,
@@ -627,7 +632,7 @@ void AtobbMLTree::FillAtoBBHighLevelBranches(
 
 void AtobbMLTree::FillTreeBranches(
     Lepton& lepton,
-    // RVec<Muon>& muons,
+    int lepton_pdgid,
     RVec<Jet>& jets,
     Particle& METv,
     const std::vector<bool>& btag_vector,
@@ -674,6 +679,7 @@ void AtobbMLTree::FillTreeBranches(
   SetBranch("Training_Tree", "Lepton0_CosPhi", float(std::cos(lepton.Phi())));
   SetBranch("Training_Tree", "Lepton0_SinPhi", float(std::sin(lepton.Phi())));
   SetBranch("Training_Tree", "Lepton0_M",      float(lepton.M()));
+  SetBranch("Training_Tree", "Lepton0_PdgId", lepton_pdgid);
   SetBranch("Training_Tree", "Lepton0_isJet",  0);
 
   SetBranch("Training_Tree", "MET_Pt",  float(METv.Pt()));

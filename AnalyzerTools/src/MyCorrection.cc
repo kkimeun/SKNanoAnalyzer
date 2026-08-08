@@ -398,17 +398,62 @@ float MyCorrection::GetElectronScaleUnc(const float scEta,
   case 3: {
     if (syst == variation::nom)
       return 1.;
+
+    // ================================================================
+    // 2024 EGM schema
+    //
+    // SmearAndSyst inputs:
+    //   syst, pt, r9, ScEta
+    //
+    // scale_up/down already return multiplicative scale factors:
+    //   e.g. 1.00059 / 0.99941
+    // ================================================================
+    if (GetEra() == "2024") {
+      auto cset = cset_electron_variation->at("SmearAndSyst");
+
+      string syst_name;
+
+      if (syst == variation::up) {
+        syst_name = "scale_up";
+      } else if (syst == variation::down) {
+        syst_name = "scale_down";
+      } else {
+        throw runtime_error(
+            "[MyCorrection::GetElectronScaleUnc] Invalid 2024 variation");
+      }
+
+      vector<correction::Variable::Type> args = {
+          syst_name,
+          static_cast<float>(pt),
+          static_cast<float>(r9),
+          static_cast<float>(scEta)
+      };
+
+      // 2024 JSON returns the full multiplicative factor directly.
+      return safeEvaluate(cset, "GetElectronScaleUnc_2024", args);
+    }
+
+    // ================================================================
+    // Existing Run-3 schema for 2022/2023
+    // ================================================================
     const string key = (GetEra().Contains("2022"))
-                           ? "Scale"
-                           : EGM_keys.at(GetEra().Data()) + "_ScaleJSON";
+                          ? "Scale"
+                          : EGM_keys.at(GetEra().Data()) + "_ScaleJSON";
+
     auto cset = cset_electron_variation->at(key);
-    vector<correction::Variable::Type> args = {"total_uncertainty",
-                                               static_cast<int>(seedGain),
-                                               static_cast<float>(runNumber),
-                                               scEta,
-                                               r9,
-                                               pt};
-    const float unc = safeEvaluate(cset, "GetElectronScaleSF", args);
+
+    vector<correction::Variable::Type> args = {
+        "total_uncertainty",
+        static_cast<int>(seedGain),
+        static_cast<float>(runNumber),
+        scEta,
+        r9,
+        pt
+    };
+
+    const float unc =
+        safeEvaluate(cset, "GetElectronScaleSF", args);
+
     if (syst == variation::up)
       return 1. + unc;
     else if (syst == variation::down)
@@ -431,38 +476,104 @@ float MyCorrection::GetElectronSmearUnc(const Electron &electron,
                                         const unsigned int seed) const {
   if (IsDATA)
     return 1.0; // No smearing for data, only applied to MC
-  if (Run == 2)
-    throw runtime_error("[MyCorrection::GetElectronSmearUnc] Run2 is not "
-                        "supported by NanoAODv9");
 
-  const string key = (GetEra().Contains("2022"))
-                         ? "Smearing"
-                         : EGM_keys.at(GetEra().Data()) + "_SmearingJSON";
-  auto cset = cset_electron_variation->at(key);
-  vector<correction::Variable::Type> args = {"rho", electron.scEta(),
-                                             electron.r9()};
-  const float rho = safeEvaluate(cset, "GetElectronScaleSF", args);
+  if (Run == 2) {
+    throw runtime_error(
+        "[MyCorrection::GetElectronSmearUnc] "
+        "Run2 is not supported by NanoAODv9");
+  }
 
   TRandom3 rng(seed);
 
-  // Handle different variation cases
-  if (syst == variation::nom) {
-    // For nominal case, apply normal smearing
-    return rng.Gaus(1.0, rho);
-  } else if (syst == variation::up) {
-    // For up variation, increase the width of the Gaussian
-    return rng.Gaus(
-        1.0, rho + safeEvaluate(cset, "GetElectronScaleSF",
-                                {"err_rho", electron.scEta(), electron.r9()}));
-  } else if (syst == variation::down) {
-    // For down variation, decrease the width of the Gaussian
-    return rng.Gaus(
-        1.0, rho - safeEvaluate(cset, "GetElectronScaleSF",
-                                {"err_rho", electron.scEta(), electron.r9()}));
-  } else {
-    throw runtime_error(
-        "[MyCorrection::GetElectronSmearUnc] Invalid syst value");
+  //====================================================================
+  // Run 3, 2024 EGM schema
+  //
+  // Correction key:
+  //   SmearAndSyst
+  //
+  // Inputs:
+  //   syst, pt, r9, ScEta
+  //
+  // Returned values:
+  //   smear      : nominal Gaussian width
+  //   smear_up   : increased Gaussian width
+  //   smear_down : decreased Gaussian width
+  //====================================================================
+  if (GetEra() == "2024") {
+    auto cset = cset_electron_variation->at("SmearAndSyst");
+
+    string syst_name;
+
+    if (syst == variation::nom) {
+      syst_name = "smear";
+    } else if (syst == variation::up) {
+      syst_name = "smear_up";
+    } else if (syst == variation::down) {
+      syst_name = "smear_down";
+    } else {
+      throw runtime_error(
+          "[MyCorrection::GetElectronSmearUnc] "
+          "Invalid 2024 variation");
+    }
+
+    vector<correction::Variable::Type> args = {
+        syst_name,
+        static_cast<float>(electron.Pt()),
+        static_cast<float>(electron.r9()),
+        static_cast<float>(electron.scEta())
+    };
+
+    const float sigma =
+        safeEvaluate(cset, "GetElectronSmearUnc_2024", args);
+
+    // Protect against an unphysical negative Gaussian width.
+    return rng.Gaus(1.0, std::max(0.f, sigma));
   }
+
+  //====================================================================
+  // Existing Run 3 implementation for 2022/2023
+  //====================================================================
+  const string key = GetEra().Contains("2022")
+                         ? "Smearing"
+                         : EGM_keys.at(GetEra().Data()) + "_SmearingJSON";
+
+  auto cset = cset_electron_variation->at(key);
+
+  vector<correction::Variable::Type> args = {
+      "rho",
+      electron.scEta(),
+      electron.r9()
+  };
+
+  const float rho =
+      safeEvaluate(cset, "GetElectronScaleSF", args);
+
+  if (syst == variation::nom) {
+    return rng.Gaus(1.0, std::max(0.f, rho));
+  }
+
+  const float err_rho =
+      safeEvaluate(
+          cset,
+          "GetElectronScaleSF",
+          {"err_rho", electron.scEta(), electron.r9()});
+
+  if (syst == variation::up) {
+    return rng.Gaus(
+        1.0,
+        std::max(0.f, rho + err_rho)
+    );
+  }
+
+  if (syst == variation::down) {
+    return rng.Gaus(
+        1.0,
+        std::max(0.f, rho - err_rho)
+    );
+  }
+
+  throw runtime_error(
+      "[MyCorrection::GetElectronSmearUnc] Invalid syst value");
 }
 
 float MyCorrection::GetElectronRECOSF(const float eta, const float pt,
