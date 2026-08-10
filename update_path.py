@@ -4,9 +4,9 @@ import glob
 import os
 import re
 
-INPUT_JSON = "data/Run3_v15_Run2_v15/2024/Sample/ForSNU/TTToHcToWAToBB-MHc70_MA15_SingleLepFilter.json"
+INPUT_JSON = "data/Run3_v15_Run2_v15/2024/Sample/ForSNU/TTToHcToWAToBB-MHc130_MA125_SingleLepFilter.json"
 
-NANO_DIR = "/gv0/Users/eunsu/TTToHcToWA_AToBB_SampleProduction/TTToHcToWA_AToBB_MHc-70_MA-15_SingleLepFilter_TuneCP5_cff/chain_RunIII2024Summer24/20260727_233803"
+NANO_DIR = "/gv0/Users/eunsu/TTToHcToWA_AToBB_SampleProduction/TTToHcToWA_AToBB_MHc-130_MA-125_SingleLepFilter_TuneCP5_cff/chain_RunIII2024Summer24/20260727_233735"
 
 def extract_number(path):
     name = os.path.basename(path)
