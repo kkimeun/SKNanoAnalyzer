@@ -343,7 +343,8 @@ void AtobbMLTree::executeEvent() {
   std::vector<unsigned int> top_b_jet_candidates;
   std::vector<unsigned int> had_W_candidates;
 
-  unsigned int n_check = std::min<unsigned int>(6, jets.size());
+  // [REMOVE]
+  // unsigned int n_check = std::min<unsigned int>(6, jets.size());
 
   // ============================================================
   // [CHANGED]
@@ -364,7 +365,7 @@ void AtobbMLTree::executeEvent() {
   // so the combinatorics remains limited.
   // ============================================================
 
-  for (unsigned int ij = 0; ij < n_check; ij++) {
+  for (unsigned int ij = 0; ij < jets.size(); ij++) {
     if (btag_vector.at(ij)) {
       if (top_b_jet_candidates.size() < 2) {
         top_b_jet_candidates.push_back(ij);
@@ -588,8 +589,8 @@ void AtobbMLTree::FillAtoBBHighLevelBranches(
         bb_mass_at_min_dr = mass;
       }
 
-      if (dr < bb_dr_min_all) {
-        bb_dr_min_all = dr;
+      if (dr < bb_dr_max_all) {
+        bb_dr_max_all = dr;
         bb_mass_at_min_dr = mass;
 
         // ======================================================
@@ -736,83 +737,361 @@ void AtobbMLTree::FillTreeBranches(
     if (bscore > btag_wp_cut) bjet_indices.push_back(i);
   }
 
+  // ============================================================
+  // [CHANGED]
+  // Store MA-INDEPENDENT information for all bb combinations
+  // among the first four pT-ordered b-tagged jets.
+  //
+  // Pair order:
+  //   01, 02, 12, 03, 13, 23
+  //
+  // These raw pair quantities will later be used in the notebook
+  // to choose the A candidate according to TARGET_MA:
+  //
+  //   best pair = argmin |m_bb - TARGET_MA|
+  //
+  // After that, the notebook can reconstruct:
+  //   A_mass_best
+  //   A_dr_best
+  //   A_pt_best
+  //   A_eta_best
+  //   A_bscore_sum_best
+  //   A_bscore_min_best
+  //   A_pt_balance_best
+  //   A_pt_over_mass
+  //   A_eta_abs
+  //   A_mass_dr
+  // ============================================================
+
   float bb_mass_01 = -999.f;
   float bb_mass_02 = -999.f;
   float bb_mass_12 = -999.f;
-  float bb_dr_01 = -999.f;
-  float bb_dr_02 = -999.f;
-  float bb_dr_12 = -999.f;
-
-  // ============================================================
-  // [ADDED]
-  // Pair information involving the fourth b-tagged jet.
-  // These are needed later in the notebook for TARGET_MA-based
-  // A reconstruction.
-  // ============================================================
   float bb_mass_03 = -999.f;
   float bb_mass_13 = -999.f;
   float bb_mass_23 = -999.f;
 
+  float bb_dr_01 = -999.f;
+  float bb_dr_02 = -999.f;
+  float bb_dr_12 = -999.f;
   float bb_dr_03 = -999.f;
   float bb_dr_13 = -999.f;
   float bb_dr_23 = -999.f;
-  // ============================================================
 
-  if (bjet_indices.size() >= 2) {
-    TLorentzVector b0 = static_cast<TLorentzVector>(jets.at(bjet_indices.at(0)));
-    TLorentzVector b1 = static_cast<TLorentzVector>(jets.at(bjet_indices.at(1)));
-    bb_mass_01 = float((b0 + b1).M());
-    bb_dr_01 = float(b0.DeltaR(b1));
-  }
+  // [ADDED] bb-pair transverse momentum
+  float bb_pt_01 = -999.f;
+  float bb_pt_02 = -999.f;
+  float bb_pt_12 = -999.f;
+  float bb_pt_03 = -999.f;
+  float bb_pt_13 = -999.f;
+  float bb_pt_23 = -999.f;
 
-  if (bjet_indices.size() >= 3) {
-    TLorentzVector b0 = static_cast<TLorentzVector>(jets.at(bjet_indices.at(0)));
-    TLorentzVector b1 = static_cast<TLorentzVector>(jets.at(bjet_indices.at(1)));
-    TLorentzVector b2 = static_cast<TLorentzVector>(jets.at(bjet_indices.at(2)));
+  // [ADDED] bb-pair eta
+  float bb_eta_01 = -999.f;
+  float bb_eta_02 = -999.f;
+  float bb_eta_12 = -999.f;
+  float bb_eta_03 = -999.f;
+  float bb_eta_13 = -999.f;
+  float bb_eta_23 = -999.f;
 
-    bb_mass_02 = float((b0 + b2).M());
-    bb_mass_12 = float((b1 + b2).M());
+  // [ADDED] sum of the two ParT b scores
+  float bb_bscore_sum_01 = -999.f;
+  float bb_bscore_sum_02 = -999.f;
+  float bb_bscore_sum_12 = -999.f;
+  float bb_bscore_sum_03 = -999.f;
+  float bb_bscore_sum_13 = -999.f;
+  float bb_bscore_sum_23 = -999.f;
 
-    bb_dr_02 = float(b0.DeltaR(b2));
-    bb_dr_12 = float(b1.DeltaR(b2));
-  }
+  // [ADDED] smaller b score of the two jets
+  float bb_bscore_min_01 = -999.f;
+  float bb_bscore_min_02 = -999.f;
+  float bb_bscore_min_12 = -999.f;
+  float bb_bscore_min_03 = -999.f;
+  float bb_bscore_min_13 = -999.f;
+  float bb_bscore_min_23 = -999.f;
+
+  // [ADDED]
+  // pT asymmetry of the two b jets:
+  //
+  //   |pT1 - pT2| / (pT1 + pT2)
+  //
+  float bb_pt_balance_01 = -999.f;
+  float bb_pt_balance_02 = -999.f;
+  float bb_pt_balance_12 = -999.f;
+  float bb_pt_balance_03 = -999.f;
+  float bb_pt_balance_13 = -999.f;
+  float bb_pt_balance_23 = -999.f;
+
+
   // ============================================================
   // [ADDED]
-  // Pair information involving the fourth b-tagged jet.
-  if (bjet_indices.size() >= 4) {
-    TLorentzVector b0 =
-        static_cast<TLorentzVector>(jets.at(bjet_indices.at(0)));
+  // Helper lambda to avoid repeating exactly the same
+  // reconstruction code for all six bb pairs.
+  // ============================================================
+  auto fill_bb_pair = [&](unsigned int idx1,
+                          unsigned int idx2,
+                          float& mass,
+                          float& dr,
+                          float& pt,
+                          float& eta,
+                          float& bscore_sum,
+                          float& bscore_min,
+                          float& pt_balance) {
+
+    const Jet& jet1 = jets.at(idx1);
+    const Jet& jet2 = jets.at(idx2);
+
     TLorentzVector b1 =
-        static_cast<TLorentzVector>(jets.at(bjet_indices.at(1)));
+        static_cast<TLorentzVector>(jet1);
     TLorentzVector b2 =
-        static_cast<TLorentzVector>(jets.at(bjet_indices.at(2)));
-    TLorentzVector b3 =
-        static_cast<TLorentzVector>(jets.at(bjet_indices.at(3)));
+        static_cast<TLorentzVector>(jet2);
 
-    bb_mass_03 = float((b0 + b3).M());
-    bb_mass_13 = float((b1 + b3).M());
-    bb_mass_23 = float((b2 + b3).M());
+    TLorentzVector bb = b1 + b2;
 
-    bb_dr_03 = float(b0.DeltaR(b3));
-    bb_dr_13 = float(b1.DeltaR(b3));
-    bb_dr_23 = float(b2.DeltaR(b3));
+    mass = float(bb.M());
+    dr   = float(b1.DeltaR(b2));
+    pt   = float(bb.Pt());
+    eta  = float(bb.Eta());
+
+    float score1 = jet1.GetTaggerResult(
+        JetTagging::JetFlavTagger::ParT,
+        JetTagging::JetFlavTaggerScoreType::B
+    );
+
+    float score2 = jet2.GetTaggerResult(
+        JetTagging::JetFlavTagger::ParT,
+        JetTagging::JetFlavTaggerScoreType::B
+    );
+
+    bscore_sum = score1 + score2;
+    bscore_min = std::min(score1, score2);
+
+    float pt1 = b1.Pt();
+    float pt2 = b2.Pt();
+
+    if ((pt1 + pt2) > 0.f) {
+      pt_balance =
+          std::abs(pt1 - pt2) / (pt1 + pt2);
+    }
+  };
+
+
+  // ============================================================
+  // At least 2 b-tagged jets
+  //
+  // In practice the event selection requires >=3 b tags,
+  // but keeping this condition makes the function self-contained.
+  // ============================================================
+  if (bjet_indices.size() >= 2) {
+
+    fill_bb_pair(
+        bjet_indices.at(0),
+        bjet_indices.at(1),
+        bb_mass_01,
+        bb_dr_01,
+        bb_pt_01,
+        bb_eta_01,
+        bb_bscore_sum_01,
+        bb_bscore_min_01,
+        bb_pt_balance_01
+    );
   }
+
+
+  // ============================================================
+  // At least 3 b-tagged jets:
+  //   02
+  //   12
+  // ============================================================
+  if (bjet_indices.size() >= 3) {
+
+    fill_bb_pair(
+        bjet_indices.at(0),
+        bjet_indices.at(2),
+        bb_mass_02,
+        bb_dr_02,
+        bb_pt_02,
+        bb_eta_02,
+        bb_bscore_sum_02,
+        bb_bscore_min_02,
+        bb_pt_balance_02
+    );
+
+    fill_bb_pair(
+        bjet_indices.at(1),
+        bjet_indices.at(2),
+        bb_mass_12,
+        bb_dr_12,
+        bb_pt_12,
+        bb_eta_12,
+        bb_bscore_sum_12,
+        bb_bscore_min_12,
+        bb_pt_balance_12
+    );
+  }
+
+
+  // ============================================================
+  // At least 4 b-tagged jets:
+  //   03
+  //   13
+  //   23
+  //
+  // For nBJets == 3 these quantities remain -999.
+  // That is intentional: the fourth b-tagged jet does not exist.
+  // ============================================================
+  if (bjet_indices.size() >= 4) {
+
+    fill_bb_pair(
+        bjet_indices.at(0),
+        bjet_indices.at(3),
+        bb_mass_03,
+        bb_dr_03,
+        bb_pt_03,
+        bb_eta_03,
+        bb_bscore_sum_03,
+        bb_bscore_min_03,
+        bb_pt_balance_03
+    );
+
+    fill_bb_pair(
+        bjet_indices.at(1),
+        bjet_indices.at(3),
+        bb_mass_13,
+        bb_dr_13,
+        bb_pt_13,
+        bb_eta_13,
+        bb_bscore_sum_13,
+        bb_bscore_min_13,
+        bb_pt_balance_13
+    );
+
+    fill_bb_pair(
+        bjet_indices.at(2),
+        bjet_indices.at(3),
+        bb_mass_23,
+        bb_dr_23,
+        bb_pt_23,
+        bb_eta_23,
+        bb_bscore_sum_23,
+        bb_bscore_min_23,
+        bb_pt_balance_23
+    );
+  }
+
+
+  // ============================================================
+  // [CHANGED] Store all bb-pair raw information
   // ============================================================
 
+  // invariant mass
   SetBranch("Training_Tree", "bb_mass_01", bb_mass_01);
   SetBranch("Training_Tree", "bb_mass_02", bb_mass_02);
   SetBranch("Training_Tree", "bb_mass_12", bb_mass_12);
-  SetBranch("Training_Tree", "bb_dr_01", bb_dr_01);
-  SetBranch("Training_Tree", "bb_dr_02", bb_dr_02);
-  SetBranch("Training_Tree", "bb_dr_12", bb_dr_12);
-
   SetBranch("Training_Tree", "bb_mass_03", bb_mass_03);
   SetBranch("Training_Tree", "bb_mass_13", bb_mass_13);
   SetBranch("Training_Tree", "bb_mass_23", bb_mass_23);
 
+  // DeltaR
+  SetBranch("Training_Tree", "bb_dr_01", bb_dr_01);
+  SetBranch("Training_Tree", "bb_dr_02", bb_dr_02);
+  SetBranch("Training_Tree", "bb_dr_12", bb_dr_12);
   SetBranch("Training_Tree", "bb_dr_03", bb_dr_03);
   SetBranch("Training_Tree", "bb_dr_13", bb_dr_13);
   SetBranch("Training_Tree", "bb_dr_23", bb_dr_23);
+
+  // pT
+  SetBranch("Training_Tree", "bb_pt_01", bb_pt_01);
+  SetBranch("Training_Tree", "bb_pt_02", bb_pt_02);
+  SetBranch("Training_Tree", "bb_pt_12", bb_pt_12);
+  SetBranch("Training_Tree", "bb_pt_03", bb_pt_03);
+  SetBranch("Training_Tree", "bb_pt_13", bb_pt_13);
+  SetBranch("Training_Tree", "bb_pt_23", bb_pt_23);
+
+  // eta
+  SetBranch("Training_Tree", "bb_eta_01", bb_eta_01);
+  SetBranch("Training_Tree", "bb_eta_02", bb_eta_02);
+  SetBranch("Training_Tree", "bb_eta_12", bb_eta_12);
+  SetBranch("Training_Tree", "bb_eta_03", bb_eta_03);
+  SetBranch("Training_Tree", "bb_eta_13", bb_eta_13);
+  SetBranch("Training_Tree", "bb_eta_23", bb_eta_23);
+
+  // sum of b scores
+  SetBranch(
+      "Training_Tree", "bb_bscore_sum_01",
+      bb_bscore_sum_01
+  );
+  SetBranch(
+      "Training_Tree", "bb_bscore_sum_02",
+      bb_bscore_sum_02
+  );
+  SetBranch(
+      "Training_Tree", "bb_bscore_sum_12",
+      bb_bscore_sum_12
+  );
+  SetBranch(
+      "Training_Tree", "bb_bscore_sum_03",
+      bb_bscore_sum_03
+  );
+  SetBranch(
+      "Training_Tree", "bb_bscore_sum_13",
+      bb_bscore_sum_13
+  );
+  SetBranch(
+      "Training_Tree", "bb_bscore_sum_23",
+      bb_bscore_sum_23
+  );
+
+  // minimum of the two b scores
+  SetBranch(
+      "Training_Tree", "bb_bscore_min_01",
+      bb_bscore_min_01
+  );
+  SetBranch(
+      "Training_Tree", "bb_bscore_min_02",
+      bb_bscore_min_02
+  );
+  SetBranch(
+      "Training_Tree", "bb_bscore_min_12",
+      bb_bscore_min_12
+  );
+  SetBranch(
+      "Training_Tree", "bb_bscore_min_03",
+      bb_bscore_min_03
+  );
+  SetBranch(
+      "Training_Tree", "bb_bscore_min_13",
+      bb_bscore_min_13
+  );
+  SetBranch(
+      "Training_Tree", "bb_bscore_min_23",
+      bb_bscore_min_23
+  );
+
+  // pT balance
+  SetBranch(
+      "Training_Tree", "bb_pt_balance_01",
+      bb_pt_balance_01
+  );
+  SetBranch(
+      "Training_Tree", "bb_pt_balance_02",
+      bb_pt_balance_02
+  );
+  SetBranch(
+      "Training_Tree", "bb_pt_balance_12",
+      bb_pt_balance_12
+  );
+  SetBranch(
+      "Training_Tree", "bb_pt_balance_03",
+      bb_pt_balance_03
+  );
+  SetBranch(
+      "Training_Tree", "bb_pt_balance_13",
+      bb_pt_balance_13
+  );
+  SetBranch(
+      "Training_Tree", "bb_pt_balance_23",
+      bb_pt_balance_23
+  );
   
   FillAtoBBHighLevelBranches(jets, btag_vector, btag_wp_cut);
 
