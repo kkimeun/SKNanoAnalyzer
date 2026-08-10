@@ -454,23 +454,41 @@ void AtobbMLTree::FillAtoBBHighLevelBranches(
     const std::vector<bool>& btag_vector,
     float btag_wp_cut
 ) {
-  const float target_MA = 60.f;
 
-  float A_mass_best = -999.f;
-  float A_dr_best = -999.f;
-  float A_pt_best = -999.f;
-  float A_eta_best = -999.f;
-  float A_bscore_sum_best = -999.f;
-  float A_bscore_min_best = -999.f;
-  int A_pair_idx1 = -1;
-  int A_pair_idx2 = -1;
+  // ============================================================
+  // [CHANGED]
+  // This function now stores only MA-INDEPENDENT bb topology.
+  //
+  // A candidate variables such as:
+  //   A_mass_best
+  //   A_dr_best
+  //   A_pt_best
+  //   ...
+  // will be constructed in the ML notebook using TARGET_MA.
+  // ============================================================
 
   float bb_mass_min_all = 999999.f;
   float bb_mass_max_all = -999.f;
   float bb_mass_at_min_dr = -999.f;
   float bb_dr_min_all = 999999.f;
   float bb_dr_max_all = -999.f;
-  float bb_mass_closest_MA60_all = 999999.f;
+
+    // ============================================================
+  // [ADDED]
+  // MA-independent A-like candidate:
+  // choose the bb pair with the smallest DeltaR.
+  //
+  // This definition is identical for signal, TTLJ, ttH, ttZ.
+  // ============================================================
+  float A_mass_minDR = -999.f;
+  float A_dr_minDR = -999.f;
+  float A_pt_minDR = -999.f;
+  float A_eta_minDR = -999.f;
+  float A_bscore_sum_minDR = -999.f;
+  float A_bscore_min_minDR = -999.f;
+  float A_pt_balance_minDR = -999.f;
+  float A_pt_over_mass_minDR = -999.f;
+
   float bb_mass_spread_all = -999.f;
 
   float bscore_max = -999.f;
@@ -478,19 +496,6 @@ void AtobbMLTree::FillAtoBBHighLevelBranches(
   float bscore_3rd = -999.f;
   float bscore_sum = 0.f;
   float bscore_sum_top4 = 0.f;
-
-  // A candidate pT / mass ratio, bb pair centrality, and mass*dr, which are expected to be somewhat correlated with the correct pairing and the A kinematics
-  float A_pt_over_mass = -999.f;
-  float A_eta_abs = -999.f;
-  float A_mass_dr = -999.f;
-  float A_pt_balance_best = -999.f;
-
-  // if (A_mass_best > 0 && A_pt_best > 0 && A_dr_best > 0) {
-  //  A_pt_over_mass = A_pt_best / A_mass_best;
-  //  A_eta_abs = std::abs(A_eta_best);
-  //  A_mass_dr = A_mass_best * A_dr_best;
-  // }
-  //
 
   std::vector<std::pair<float, unsigned int>> bscore_pairs;
   std::vector<unsigned int> bjet_indices;
@@ -523,7 +528,9 @@ void AtobbMLTree::FillAtoBBHighLevelBranches(
     bscore_sum_top4 += bscore_pairs.at(i).first;
   }
 
-  float best_mass_diff = 999999.f;
+  // [CHANGED]
+  // No target-MA-dependent best-pair selection is done here.
+
 
   for (unsigned int a = 0; a < bjet_indices.size(); a++) {
     for (unsigned int b = a + 1; b < bjet_indices.size(); b++) {
@@ -554,31 +561,33 @@ void AtobbMLTree::FillAtoBBHighLevelBranches(
         bb_mass_at_min_dr = mass;
       }
 
-      if (dr > bb_dr_max_all) bb_dr_max_all = dr;
+      if (dr < bb_dr_min_all) {
+        bb_dr_min_all = dr;
+        bb_mass_at_min_dr = mass;
 
-      float mass_diff = std::abs(mass - target_MA);
-      if (mass_diff < bb_mass_closest_MA60_all) {
-        bb_mass_closest_MA60_all = mass_diff;
-      }
-
-      if (mass_diff < best_mass_diff) {
-        best_mass_diff = mass_diff;
+        // ======================================================
+        // [ADDED]
+        // MA-independent A-like candidate:
+        // use the closest bb pair in DeltaR.
+        // ======================================================
+        A_mass_minDR = mass;
+        A_dr_minDR = dr;
+        A_pt_minDR = A.Pt();
+        A_eta_minDR = A.Eta();
+        A_bscore_sum_minDR = bscore1 + bscore2;
+        A_bscore_min_minDR = std::min(bscore1, bscore2);
 
         float pt1 = b1.Pt();
         float pt2 = b2.Pt();
 
-        if ((pt1 + pt2) > 0) {
-          A_pt_balance_best = std::abs(pt1 - pt2) / (pt1 + pt2);
+        if ((pt1 + pt2) > 0.f) {
+          A_pt_balance_minDR =
+              std::abs(pt1 - pt2) / (pt1 + pt2);
         }
 
-        A_mass_best = mass;
-        A_dr_best = dr;
-        A_pt_best = A.Pt();
-        A_eta_best = A.Eta();
-        A_bscore_sum_best = bscore1 + bscore2;
-        A_bscore_min_best = std::min(bscore1, bscore2);
-        A_pair_idx1 = i;
-        A_pair_idx2 = j;
+        if (mass > 0.f) {
+          A_pt_over_mass_minDR = A.Pt() / mass;
+        }
       }
     }
   }
@@ -588,33 +597,17 @@ void AtobbMLTree::FillAtoBBHighLevelBranches(
   } else {
     bb_mass_min_all = -999.f;
     bb_mass_max_all = -999.f;
-    bb_mass_closest_MA60_all = -999.f;
+    bb_mass_at_min_dr = -999.f;
     bb_dr_min_all = -999.f;
     bb_dr_max_all = -999.f;
+    bb_mass_spread_all = -999.f;
   }
-
-  if (A_mass_best > 0 && A_pt_best > 0 && A_dr_best > 0) {
-  A_pt_over_mass = A_pt_best / A_mass_best;
-  A_eta_abs = std::abs(A_eta_best);
-  A_mass_dr = A_mass_best * A_dr_best;
-}
-
-
-  SetBranch("Training_Tree", "A_mass_best", A_mass_best);
-  SetBranch("Training_Tree", "A_dr_best", A_dr_best);
-  SetBranch("Training_Tree", "A_pt_best", A_pt_best);
-  SetBranch("Training_Tree", "A_eta_best", A_eta_best);
-  SetBranch("Training_Tree", "A_bscore_sum_best", A_bscore_sum_best);
-  SetBranch("Training_Tree", "A_bscore_min_best", A_bscore_min_best);
-  SetBranch("Training_Tree", "A_pair_idx1", A_pair_idx1);
-  SetBranch("Training_Tree", "A_pair_idx2", A_pair_idx2);
 
   SetBranch("Training_Tree", "bb_mass_min_all", bb_mass_min_all);
   SetBranch("Training_Tree", "bb_mass_max_all", bb_mass_max_all);
   SetBranch("Training_Tree", "bb_mass_at_min_dr", bb_mass_at_min_dr);
   SetBranch("Training_Tree", "bb_dr_min_all", bb_dr_min_all);
   SetBranch("Training_Tree", "bb_dr_max_all", bb_dr_max_all);
-  SetBranch("Training_Tree", "bb_mass_closest_MA60_all", bb_mass_closest_MA60_all);
   SetBranch("Training_Tree", "bb_mass_spread_all", bb_mass_spread_all);
 
   SetBranch("Training_Tree", "bscore_max", bscore_max);
@@ -623,11 +616,20 @@ void AtobbMLTree::FillAtoBBHighLevelBranches(
   SetBranch("Training_Tree", "bscore_sum", bscore_sum);
   SetBranch("Training_Tree", "bscore_sum_top4", bscore_sum_top4);
 
-  SetBranch("Training_Tree", "A_pt_over_mass", A_pt_over_mass);
-  SetBranch("Training_Tree", "A_eta_abs", A_eta_abs);
-  SetBranch("Training_Tree", "A_mass_dr", A_mass_dr);
+  // ============================================================
+  // [ADDED]
+  // MA-independent A-like candidate branches.
+  // Candidate = bb pair with minimum DeltaR.
+  // ============================================================
+  SetBranch("Training_Tree", "A_mass_minDR", A_mass_minDR);
+  SetBranch("Training_Tree", "A_dr_minDR", A_dr_minDR);
+  SetBranch("Training_Tree", "A_pt_minDR", A_pt_minDR);
+  SetBranch("Training_Tree", "A_eta_minDR", A_eta_minDR);
+  SetBranch("Training_Tree", "A_bscore_sum_minDR", A_bscore_sum_minDR);
+  SetBranch("Training_Tree", "A_bscore_min_minDR", A_bscore_min_minDR);
+  SetBranch("Training_Tree", "A_pt_balance_minDR", A_pt_balance_minDR);
+  SetBranch("Training_Tree", "A_pt_over_mass_minDR", A_pt_over_mass_minDR);
 
-  SetBranch("Training_Tree", "A_pt_balance_best", A_pt_balance_best);
 }
 
 void AtobbMLTree::FillTreeBranches(
@@ -714,6 +716,21 @@ void AtobbMLTree::FillTreeBranches(
   float bb_dr_02 = -999.f;
   float bb_dr_12 = -999.f;
 
+  // ============================================================
+  // [ADDED]
+  // Pair information involving the fourth b-tagged jet.
+  // These are needed later in the notebook for TARGET_MA-based
+  // A reconstruction.
+  // ============================================================
+  float bb_mass_03 = -999.f;
+  float bb_mass_13 = -999.f;
+  float bb_mass_23 = -999.f;
+
+  float bb_dr_03 = -999.f;
+  float bb_dr_13 = -999.f;
+  float bb_dr_23 = -999.f;
+  // ============================================================
+
   if (bjet_indices.size() >= 2) {
     TLorentzVector b0 = static_cast<TLorentzVector>(jets.at(bjet_indices.at(0)));
     TLorentzVector b1 = static_cast<TLorentzVector>(jets.at(bjet_indices.at(1)));
@@ -732,6 +749,28 @@ void AtobbMLTree::FillTreeBranches(
     bb_dr_02 = float(b0.DeltaR(b2));
     bb_dr_12 = float(b1.DeltaR(b2));
   }
+  // ============================================================
+  // [ADDED]
+  // Pair information involving the fourth b-tagged jet.
+  if (bjet_indices.size() >= 4) {
+    TLorentzVector b0 =
+        static_cast<TLorentzVector>(jets.at(bjet_indices.at(0)));
+    TLorentzVector b1 =
+        static_cast<TLorentzVector>(jets.at(bjet_indices.at(1)));
+    TLorentzVector b2 =
+        static_cast<TLorentzVector>(jets.at(bjet_indices.at(2)));
+    TLorentzVector b3 =
+        static_cast<TLorentzVector>(jets.at(bjet_indices.at(3)));
+
+    bb_mass_03 = float((b0 + b3).M());
+    bb_mass_13 = float((b1 + b3).M());
+    bb_mass_23 = float((b2 + b3).M());
+
+    bb_dr_03 = float(b0.DeltaR(b3));
+    bb_dr_13 = float(b1.DeltaR(b3));
+    bb_dr_23 = float(b2.DeltaR(b3));
+  }
+  // ============================================================
 
   SetBranch("Training_Tree", "bb_mass_01", bb_mass_01);
   SetBranch("Training_Tree", "bb_mass_02", bb_mass_02);
@@ -739,6 +778,14 @@ void AtobbMLTree::FillTreeBranches(
   SetBranch("Training_Tree", "bb_dr_01", bb_dr_01);
   SetBranch("Training_Tree", "bb_dr_02", bb_dr_02);
   SetBranch("Training_Tree", "bb_dr_12", bb_dr_12);
+
+  SetBranch("Training_Tree", "bb_mass_03", bb_mass_03);
+  SetBranch("Training_Tree", "bb_mass_13", bb_mass_13);
+  SetBranch("Training_Tree", "bb_mass_23", bb_mass_23);
+
+  SetBranch("Training_Tree", "bb_dr_03", bb_dr_03);
+  SetBranch("Training_Tree", "bb_dr_13", bb_dr_13);
+  SetBranch("Training_Tree", "bb_dr_23", bb_dr_23);
   
   FillAtoBBHighLevelBranches(jets, btag_vector, btag_wp_cut);
 
