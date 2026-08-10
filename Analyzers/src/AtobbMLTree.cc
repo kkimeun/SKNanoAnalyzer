@@ -345,6 +345,25 @@ void AtobbMLTree::executeEvent() {
 
   unsigned int n_check = std::min<unsigned int>(6, jets.size());
 
+  // ============================================================
+  // [CHANGED]
+  // Search ALL selected jets for ttbar reconstruction candidates.
+  //
+  // Reason:
+  //   With the old first-6-jet restriction, an event such as
+  //
+  //     b b b b b j j
+  //
+  //   had only one non-b jet among the first six jets, even though
+  //   a second W->jj candidate existed as Jet6.
+  //
+  // We still keep only:
+  //   - first 2 pT-ordered b-tagged jets
+  //   - first 3 pT-ordered non-b-tagged jets
+  //
+  // so the combinatorics remains limited.
+  // ============================================================
+
   for (unsigned int ij = 0; ij < n_check; ij++) {
     if (btag_vector.at(ij)) {
       if (top_b_jet_candidates.size() < 2) {
@@ -355,6 +374,14 @@ void AtobbMLTree::executeEvent() {
       if (had_W_candidates.size() < 3) {
         had_W_candidates.push_back(ij);
       }
+
+    // Optional: Once enough candidates are found, 
+    // there is no need to inspect lower-pT jets.
+    if (top_b_jet_candidates.size() >= 2 && 
+        had_W_candidates.size() >= 3) {
+      break;
+      }
+
     }
   }
 
