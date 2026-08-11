@@ -587,17 +587,13 @@ void AtobbMLTree::FillAtoBBHighLevelBranches(
       if (dr < bb_dr_min_all) {
         bb_dr_min_all = dr;
         bb_mass_at_min_dr = mass;
-      }
-
-      if (dr < bb_dr_max_all) {
-        bb_dr_max_all = dr;
-        bb_mass_at_min_dr = mass;
 
         // ======================================================
         // [ADDED]
         // MA-independent A-like candidate:
         // use the closest bb pair in DeltaR.
         // ======================================================
+
         A_mass_minDR = mass;
         A_dr_minDR = dr;
         A_pt_minDR = A.Pt();
@@ -612,10 +608,14 @@ void AtobbMLTree::FillAtoBBHighLevelBranches(
           A_pt_balance_minDR =
               std::abs(pt1 - pt2) / (pt1 + pt2);
         }
-
         if (mass > 0.f) {
           A_pt_over_mass_minDR = A.Pt() / mass;
         }
+      }
+
+      if (dr < bb_dr_max_all) {
+        bb_dr_max_all = dr;
+        bb_mass_at_min_dr = mass;
       }
     }
   }
