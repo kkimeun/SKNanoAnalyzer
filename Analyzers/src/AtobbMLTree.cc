@@ -613,9 +613,8 @@ void AtobbMLTree::FillAtoBBHighLevelBranches(
         }
       }
 
-      if (dr < bb_dr_max_all) {
+      if (dr > bb_dr_max_all) {
         bb_dr_max_all = dr;
-        bb_mass_at_min_dr = mass;
       }
     }
   }

@@ -2,9 +2,9 @@
     "name": "TTToHcToWAToBB-MHc130_MA90_SingleLepFilter",
     "isMC": 1,
     "PD": "TTToHcToWA_AToBB_MHc-130_MA-90_SingleLepFilter_TuneCP5_cff",
-    "xsec": 0.016656246994325285,
+    "xsec": 15.68956316,
     "sumsign": 198952.0,
-    "sumW": 5648545.0,
+    "sumW": 5648545.366754532,
     "nmc": 198952.0,
     "path": [
         "/gv0/Users/eunsu/TTToHcToWA_AToBB_SampleProduction/TTToHcToWA_AToBB_MHc-130_MA-90_SingleLepFilter_TuneCP5_cff/chain_RunIII2024Summer24/20260707_005500/NanoAODv15_0.root",
